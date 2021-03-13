@@ -2,6 +2,8 @@ package restassured.test;
 
 public class ReturnBook {
     private String bookId;
+    private String successMessage;
+
 
     public String getBookId() {
         return bookId;
@@ -10,10 +12,7 @@ public class ReturnBook {
     public String getSuccessMessage() {
         return successMessage;
     }
-
-    private String successMessage;
-
-    public ReturnBook(String bookId,String successMessage){
+    public ReturnBook(String bookId, String successMessage) {
         this.bookId = bookId;
         this.successMessage = successMessage;
     }

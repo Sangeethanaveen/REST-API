@@ -1,5 +1,6 @@
 package restassured.test;
 
+import deserialization.BookDetailsByAuthor;
 import restassured.request.AddBookDetailRequest;
 import restassured.request.RequestDeleteBody;
 import restassured.response.DeleteResponse;
@@ -11,32 +12,40 @@ import org.testng.Assert;
 import restassured.response.ResponseExistingBook;
 
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 
 import static io.restassured.RestAssured.given;
 
 public class AddGetDeleteBook {
     private Response response = null;
-    String book = "Life is what you make it";
-    String isbn = "AYLC";
+    private Response getResponse = null;
+    private Response delResponse =null;
+    List<String> bookNameList = new ArrayList<>();
+    HashMap<String,String> bookIdMap = new HashMap<>();
+
     String aisle1 = String.valueOf(generateAisle());
-    String author = "Preethy Shenoy";
     String aisle2 = String.valueOf(generateAisle());
+    String aisle3 = String.valueOf(generateAisle());
+    String aisle4 = String.valueOf(generateAisle());
+    String aisle5 = String.valueOf(generateAisle());
 
     public int generateAisle() {
         Random ran = new Random();
-        int aisle = ran.nextInt(25000025);
-        System.out.println(isbn);
+        int aisle = ran.nextInt(1000);
         return aisle;
     }
 
-    public Response addBook(String aisle) {
+    public void addBook(String aisle,String isbn,String bName,String author) {
         RestAssured.baseURI = "http://216.10.245.166";
         AddBookDetailRequest addBook = new AddBookDetailRequest();
-        addBook.setName(book);
+        addBook.setName(bName);
         addBook.setIsbn(isbn);
         addBook.setAisle(aisle);
         addBook.setAuthor(author);
+        bookNameList.add(bName);
         response = given()
                 .header("Content-Type", "application/json")
                 .log().all()
@@ -44,7 +53,10 @@ public class AddGetDeleteBook {
                 .when().post("/Library/Addbook.php").then()
                 .extract().response();
         System.out.println(response.asString());
-        return response;
+        ResponseAddBook addBookResponse = response.body().as(ResponseAddBook.class);
+        String searchById = addBookResponse.getId();
+        bookIdMap.put(bName,searchById);
+
     }
 
     public ReturnBook addBookResponse(String aisle) {
@@ -99,10 +111,11 @@ public class AddGetDeleteBook {
         int statusCode = delResponse.getStatusCode();
         System.out.println(delResponse.asString());
         Assert.assertEquals(statusCode, 200);
-        DeleteResponse delete = delResponse.as(DeleteResponse.class);
+        DeleteResponse delete = delResponse.body().as(DeleteResponse.class);
         String delMessage = delete.getMsg();
         System.out.println(delMessage);
         return delMessage;
+
     }
 
     public boolean getDeletedBook(String searchById) {
@@ -118,6 +131,40 @@ public class AddGetDeleteBook {
         int status = response.getStatusCode();
         boolean value = (status == 404);
         return value;
+    }
+    public void getBookByAuthor(String author){
+        RestAssured.baseURI="http://216.10.245.166";
+        getResponse = RestAssured.given().queryParam("AuthorName",author)
+                .header("Content-Type","application/json")
+                .when()
+                .get("Library/GetBook.php")//post
+                .then()
+                .assertThat().log().all()
+                //.statusCode(200)
+                .extract().response();
+        System.out.println(getResponse.asString());
+
+    }
+    public List<String> verifyGetBookByAuthor(){
+        BookDetailsByAuthor[] getBookResponse = getResponse.as(BookDetailsByAuthor[].class);
+        int noOfBook = getBookResponse.length;
+        System.out.println(noOfBook);
+        for(int i=0;i<noOfBook;i++) {
+            String bookName = getBookResponse[i].getBook_name();
+            //System.out.println(bookName);
+            bookNameList.add(bookName);
+        }
+        return bookNameList;
+
+    }
+    public void deleteBookByIdWithAuthorName(){
+       int bookNameSize =  bookNameList.size();
+       for (int i=0;i<bookNameSize;i++)
+       {
+           String book = bookNameList.get(i);
+           String delId =bookIdMap.get(book);
+           deleteBook(delId);
+       }
     }
 
 }
