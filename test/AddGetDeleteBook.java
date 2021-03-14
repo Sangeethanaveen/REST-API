@@ -25,6 +25,7 @@ public class AddGetDeleteBook {
     private Response delResponse =null;
     List<String> bookNameList = new ArrayList<>();
     HashMap<String,String> bookIdMap = new HashMap<>();
+    private String delId;
 
     String aisle1 = String.valueOf(generateAisle());
     String aisle2 = String.valueOf(generateAisle());
@@ -132,7 +133,7 @@ public class AddGetDeleteBook {
         boolean value = (status == 404);
         return value;
     }
-    public void getBookByAuthor(String author){
+    public Integer  getBookByAuthor(String author){
         RestAssured.baseURI="http://216.10.245.166";
         getResponse = RestAssured.given().queryParam("AuthorName",author)
                 .header("Content-Type","application/json")
@@ -143,6 +144,9 @@ public class AddGetDeleteBook {
                 //.statusCode(200)
                 .extract().response();
         System.out.println(getResponse.asString());
+        BookDetailsByAuthor[] getBookResponse = getResponse.as(BookDetailsByAuthor[].class);
+        int noOfBook = getBookResponse.length;
+        return noOfBook;
 
     }
     public List<String> verifyGetBookByAuthor(){
@@ -156,6 +160,20 @@ public class AddGetDeleteBook {
         }
         return bookNameList;
 
+    }
+    public String getIdOfTheBook(){
+        BookDetailsByAuthor[] getBookResponse = getResponse.as(BookDetailsByAuthor[].class);
+        int noOfBook = getBookResponse.length;
+        System.out.println(noOfBook);
+        for(int i=0;i<noOfBook;i++) {
+            String bookName = getBookResponse[i].getBook_name();
+            //System.out.println(bookName);
+            bookNameList.add(bookName);
+            String isbnValue = getBookResponse[i].getIsbn();
+            String aisleValue = getBookResponse[i].getAisle();
+            delId = isbnValue.concat(aisleValue);
+        }
+            return delId;
     }
     public void deleteBookByIdWithAuthorName(){
        int bookNameSize =  bookNameList.size();
